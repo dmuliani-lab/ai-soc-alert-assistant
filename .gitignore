@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 streamlit.log
 streamlit.err.log
+static-dashboard.log
+static-dashboard.err.log

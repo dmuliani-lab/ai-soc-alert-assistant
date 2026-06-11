@@ -1,0 +1,1605 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI-SOC Alert Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js" onload="window.ChartReady=true; window.renderFeatureChart && window.renderFeatureChart()" onerror="window.ChartLoadFailed=true"></script>
+  <style>
+    :root {
+      --bg-base: #080C14;
+      --bg-surface: #0E1520;
+      --bg-elevated: #162133;
+      --accent-primary: #3D9EFF;
+      --accent-warning: #E8A838;
+      --accent-critical: #E84545;
+      --accent-success: #22C55E;
+      --text-primary: #E8EDF5;
+      --text-muted: #5C7090;
+      --border: #1E2D42;
+      --sidebar-width: 220px;
+      --sidebar-collapsed: 56px;
+      --topbar-height: 58px;
+      --tabbar-height: 54px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 14% 8%, rgba(61, 158, 255, 0.12), transparent 25%),
+        radial-gradient(circle at 88% 4%, rgba(232, 168, 56, 0.08), transparent 22%),
+        linear-gradient(180deg, #080C14 0%, #060A11 100%);
+      color: var(--text-primary);
+      font-family: "Inter", system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .mono,
+    input,
+    .data-value,
+    .table td:nth-child(1) {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: var(--sidebar-width);
+      background: linear-gradient(180deg, #0B101A 0%, #080C14 100%);
+      border-right: 1px solid var(--border);
+      padding: 16px 14px;
+      z-index: 30;
+      transition: width 0.2s ease;
+      overflow: hidden;
+    }
+
+    body.sidebar-collapsed .sidebar {
+      width: var(--sidebar-collapsed);
+      padding: 16px 8px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 38px;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      width: 36px;
+      height: 36px;
+      flex: 0 0 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      color: #BBDDFF;
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 800;
+      background: linear-gradient(145deg, rgba(61, 158, 255, 0.24), rgba(61, 158, 255, 0.05));
+      border: 1px solid rgba(61, 158, 255, 0.5);
+      box-shadow: 0 0 22px rgba(61, 158, 255, 0.14);
+    }
+
+    .wordmark {
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: opacity 0.2s ease;
+    }
+
+    body.sidebar-collapsed .wordmark,
+    body.sidebar-collapsed .nav-label,
+    body.sidebar-collapsed .sidebar-section-title,
+    body.sidebar-collapsed .input-list,
+    body.sidebar-collapsed .bottom-status span {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .collapse-btn {
+      position: absolute;
+      top: 17px;
+      right: 12px;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(22, 33, 51, 0.8);
+      color: var(--text-muted);
+      transition: 0.2s ease;
+    }
+
+    .collapse-btn:hover {
+      color: var(--text-primary);
+      border-color: rgba(61, 158, 255, 0.55);
+      box-shadow: 0 0 18px rgba(61, 158, 255, 0.16);
+    }
+
+    body.sidebar-collapsed .collapse-btn {
+      right: 8px;
+      top: 62px;
+    }
+
+    .side-nav {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 26px;
+    }
+
+    .side-nav button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text-muted);
+      padding: 0 10px;
+      text-align: left;
+      transition: 0.2s ease;
+    }
+
+    .side-nav button:hover,
+    .side-nav button.active {
+      color: var(--text-primary);
+      background: rgba(61, 158, 255, 0.08);
+      border-color: rgba(61, 158, 255, 0.22);
+    }
+
+    .nav-icon {
+      width: 20px;
+      flex: 0 0 20px;
+      text-align: center;
+      color: var(--accent-primary);
+    }
+
+    .sidebar-section-title {
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0 0 10px;
+      white-space: nowrap;
+      transition: opacity 0.2s ease;
+    }
+
+    .input-list {
+      display: grid;
+      gap: 8px;
+      transition: opacity 0.2s ease;
+    }
+
+    .input-list code {
+      display: block;
+      padding: 11px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(30, 45, 66, 0.85);
+      background: rgba(14, 21, 32, 0.72);
+      color: var(--text-primary);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.8rem;
+    }
+
+    .bottom-status {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 16px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      border-radius: 10px;
+      padding: 0 12px;
+      color: #CFFFE2;
+      background: rgba(34, 197, 94, 0.09);
+      white-space: nowrap;
+    }
+
+    .green-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-success);
+      box-shadow: 0 0 14px rgba(34, 197, 94, 0.9);
+      flex: 0 0 8px;
+    }
+
+    body.sidebar-collapsed .bottom-status {
+      left: 8px;
+      right: 8px;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: var(--sidebar-width);
+      right: 0;
+      height: var(--topbar-height);
+      z-index: 20;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 12, 20, 0.86);
+      backdrop-filter: blur(18px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      transition: left 0.2s ease;
+    }
+
+    body.sidebar-collapsed .topbar,
+    body.sidebar-collapsed .tabbar,
+    body.sidebar-collapsed .main {
+      left: var(--sidebar-collapsed);
+    }
+
+    .system-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+    }
+
+    .status-cluster {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .status-pill {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 11px;
+      background: rgba(22, 33, 51, 0.76);
+      color: var(--text-primary);
+      font-size: 0.78rem;
+      overflow: hidden;
+    }
+
+    .radar-dot {
+      position: relative;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      box-shadow: 0 0 18px rgba(61, 158, 255, 0.95);
+      z-index: 1;
+    }
+
+    .radar-dot::before {
+      content: "";
+      position: absolute;
+      inset: -12px;
+      border: 1px solid var(--accent-primary);
+      border-radius: 50%;
+      animation: radarPulse 3s ease-out infinite;
+    }
+
+    @keyframes radarPulse {
+      0% { transform: scale(0.35); opacity: 0; }
+      45% { opacity: 0.4; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+
+    .tabbar {
+      position: fixed;
+      top: var(--topbar-height);
+      left: var(--sidebar-width);
+      right: 0;
+      height: var(--tabbar-height);
+      z-index: 19;
+      display: flex;
+      align-items: end;
+      gap: 18px;
+      padding: 0 28px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 12, 20, 0.9);
+      backdrop-filter: blur(16px);
+      overflow-x: auto;
+      transition: left 0.2s ease;
+    }
+
+    .tabbar button {
+      height: 100%;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      padding: 0 4px;
+      white-space: nowrap;
+      font-weight: 700;
+      transition: 0.2s ease;
+    }
+
+    .tabbar button:hover,
+    .tabbar button.active {
+      color: var(--text-primary);
+    }
+
+    .tabbar button.active {
+      border-bottom-color: var(--accent-primary);
+    }
+
+    .main {
+      position: absolute;
+      top: calc(var(--topbar-height) + var(--tabbar-height));
+      left: var(--sidebar-width);
+      right: 0;
+      min-height: calc(100vh - var(--topbar-height) - var(--tabbar-height));
+      padding: 28px;
+      transition: left 0.2s ease;
+    }
+
+    .tab-panel {
+      display: none;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .tab-panel.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+      animation: panelIn 0.2s ease both;
+    }
+
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 20px;
+      background:
+        linear-gradient(135deg, rgba(61, 158, 255, 0.16), transparent 34%),
+        linear-gradient(180deg, rgba(14, 21, 32, 0.96), rgba(8, 12, 20, 0.92));
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: var(--accent-primary);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .hero h1,
+    .section-heading,
+    .card-title {
+      font-family: "Space Grotesk", sans-serif;
+      letter-spacing: 0;
+    }
+
+    .hero h1 {
+      margin: 0;
+      max-width: 880px;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1.03;
+      font-weight: 700;
+    }
+
+    .hero p {
+      max-width: 840px;
+      margin: 14px 0 0;
+      color: #9BAAC0;
+      line-height: 1.6;
+    }
+
+    .section-heading {
+      border-left: 3px solid var(--accent-primary);
+      padding-left: 12px;
+      margin: 0 0 16px;
+      font-weight: 600;
+      font-size: 1.35rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .manual-grid {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+
+    .feature-grid {
+      grid-template-columns: minmax(260px, 0.78fr) minmax(420px, 1.4fr);
+      align-items: stretch;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(14, 21, 32, 0.94), rgba(10, 15, 24, 0.97));
+      padding: 18px;
+    }
+
+    .card-title {
+      margin: 0 0 14px;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .input-group {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(22, 33, 51, 0.48);
+      padding: 10px;
+      transition: 0.2s ease;
+    }
+
+    .input-group:hover,
+    .input-group:focus-within {
+      border-color: rgba(61, 158, 255, 0.55);
+      box-shadow: 0 0 20px rgba(61, 158, 255, 0.12);
+    }
+
+    .input-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+
+    .unit-chip {
+      color: #A8CFFF;
+      border: 1px solid rgba(61, 158, 255, 0.3);
+      border-radius: 999px;
+      background: rgba(61, 158, 255, 0.09);
+      padding: 2px 7px;
+      font-size: 0.68rem;
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .input-group input {
+      width: 100%;
+      border: 1px solid rgba(30, 45, 66, 0.7);
+      border-radius: 8px;
+      background: #0A0F18;
+      color: var(--text-primary);
+      padding: 11px 10px;
+      outline: none;
+      transition: 0.2s ease;
+    }
+
+    .input-group input:focus {
+      border-color: var(--accent-primary);
+    }
+
+    .cta {
+      position: relative;
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid rgba(61, 158, 255, 0.55);
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 800;
+      background: linear-gradient(90deg, #1D66B8, var(--accent-primary));
+      overflow: hidden;
+      transition: 0.2s ease;
+    }
+
+    .cta:hover {
+      box-shadow: 0 0 0 1px rgba(61, 158, 255, 0.25), 0 0 26px rgba(61, 158, 255, 0.24);
+      transform: translateY(-1px);
+    }
+
+    .cta::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -38%;
+      width: 28%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+      transform: skewX(-18deg);
+    }
+
+    .cta:hover::after {
+      animation: scanLine 1.2s ease-in-out infinite;
+    }
+
+    @keyframes scanLine {
+      from { left: -38%; }
+      to { left: 115%; }
+    }
+
+    .result-card {
+      display: none;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .result-card.visible {
+      display: grid;
+      animation: panelIn 0.2s ease both;
+    }
+
+    .empty-state {
+      display: grid;
+      place-items: center;
+      min-height: 390px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .gauge-wrap {
+      display: grid;
+      place-items: center;
+      min-height: 310px;
+    }
+
+    .gauge {
+      width: 218px;
+      height: 218px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at center, #0E1520 0 57%, transparent 58%),
+        conic-gradient(var(--gauge-color) var(--gauge-angle), #162133 0deg);
+      box-shadow: 0 0 30px rgba(61, 158, 255, 0.12), inset 0 0 0 1px rgba(61, 158, 255, 0.16);
+      transition: 0.2s ease;
+    }
+
+    .gauge-inner {
+      width: 150px;
+      height: 150px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: #0A0F18;
+    }
+
+    .gauge-number {
+      display: block;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 64px;
+      line-height: 0.95;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .gauge-caption {
+      display: block;
+      margin-top: 8px;
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 800;
+    }
+
+    .assessment {
+      display: grid;
+      gap: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 5px 10px;
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .risk-low {
+      color: #D9FFE9;
+      background: rgba(34, 197, 94, 0.14);
+      border-color: rgba(34, 197, 94, 0.42);
+    }
+
+    .risk-medium {
+      color: #FFE9B8;
+      background: rgba(232, 168, 56, 0.15);
+      border-color: rgba(232, 168, 56, 0.44);
+    }
+
+    .risk-high {
+      color: #FFE9B8;
+      background: rgba(232, 168, 56, 0.2);
+      border-color: rgba(232, 168, 56, 0.56);
+    }
+
+    .risk-critical {
+      color: #FFE3E3;
+      background: rgba(232, 69, 69, 0.18);
+      border-color: rgba(232, 69, 69, 0.58);
+    }
+
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .kv {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      background: rgba(22, 33, 51, 0.52);
+    }
+
+    .kv-label {
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .kv-value {
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      color: var(--text-primary);
+      word-break: break-word;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mitre-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(61, 158, 255, 0.36);
+      color: #C9E4FF;
+      background: rgba(61, 158, 255, 0.08);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: 0.2s ease;
+    }
+
+    .mitre-pill:hover {
+      box-shadow: 0 0 22px rgba(61, 158, 255, 0.28);
+      transform: translateY(-1px);
+    }
+
+    .response-list {
+      display: grid;
+      gap: 8px;
+      counter-reset: response;
+    }
+
+    .response-step {
+      counter-increment: response;
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      align-items: start;
+      gap: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(22, 33, 51, 0.44);
+      padding: 10px;
+    }
+
+    .response-step::before {
+      content: counter(response);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(61, 158, 255, 0.12);
+      color: #C9E4FF;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .drop-zone {
+      border: 1px dashed rgba(61, 158, 255, 0.5);
+      border-radius: 10px;
+      background: rgba(61, 158, 255, 0.035);
+      padding: 26px;
+      display: grid;
+      gap: 12px;
+      place-items: center;
+      text-align: center;
+      transition: 0.2s ease;
+    }
+
+    .drop-zone.drag-over,
+    .drop-zone:hover {
+      animation: dropPulse 1.5s ease-in-out infinite;
+      background: rgba(61, 158, 255, 0.065);
+    }
+
+    @keyframes dropPulse {
+      0%, 100% { border-color: rgba(61, 158, 255, 0.35); }
+      50% { border-color: rgba(61, 158, 255, 0.88); }
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .ghost-btn {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(22, 33, 51, 0.7);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      font-weight: 800;
+      transition: 0.2s ease;
+    }
+
+    .ghost-btn:hover {
+      border-color: rgba(61, 158, 255, 0.6);
+      box-shadow: 0 0 20px rgba(61, 158, 255, 0.12);
+    }
+
+    .progress-shell {
+      width: 100%;
+      height: 9px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: rgba(22, 33, 51, 0.65);
+      display: none;
+    }
+
+    .progress-fill {
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #1D66B8, var(--accent-primary));
+      transition: width 0.2s ease;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-top: 16px;
+    }
+
+    .table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      background: rgba(14, 21, 32, 0.72);
+    }
+
+    .table th,
+    .table td {
+      padding: 13px 14px;
+      border-bottom: 1px solid rgba(30, 45, 66, 0.78);
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    .table th {
+      color: #8FA0B8;
+      background: rgba(22, 33, 51, 0.74);
+      font-size: 0.76rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .table tr:hover td {
+      background: rgba(61, 158, 255, 0.045);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(14, 21, 32, 0.78);
+      padding: 13px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 1.5rem;
+    }
+
+    .feature-panel {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.8fr) minmax(420px, 1.45fr);
+      gap: 16px;
+    }
+
+    .feature-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .feature-table td,
+    .feature-table th {
+      border-bottom: 1px solid var(--border);
+      padding: 12px 4px;
+      text-align: left;
+    }
+
+    .feature-table th {
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .diamond {
+      color: var(--accent-primary);
+      margin-right: 7px;
+      text-shadow: 0 0 14px rgba(61, 158, 255, 0.75);
+    }
+
+    .chart-card {
+      min-height: 390px;
+    }
+
+    .fallback-bars {
+      display: none;
+      gap: 12px;
+      flex-direction: column;
+    }
+
+    .fallback-row {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr) 50px;
+      gap: 12px;
+      align-items: center;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.82rem;
+    }
+
+    .track {
+      height: 12px;
+      background: rgba(92, 112, 144, 0.18);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .fill {
+      width: 0;
+      height: 100%;
+      background: var(--accent-primary);
+      border-radius: 999px;
+      animation: barIn 0.9s ease forwards;
+    }
+
+    @keyframes barIn {
+      from { width: 0; }
+      to { width: var(--w); }
+    }
+
+    .muted {
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 900px) {
+      :root {
+        --sidebar-width: 56px;
+      }
+
+      .sidebar {
+        width: var(--sidebar-collapsed);
+        padding: 16px 8px;
+      }
+
+      .wordmark,
+      .nav-label,
+      .sidebar-section-title,
+      .input-list,
+      .bottom-status span {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .topbar,
+      .tabbar,
+      .main {
+        left: var(--sidebar-collapsed);
+      }
+
+      .topbar {
+        padding: 0 14px;
+      }
+
+      .system-title {
+        display: none;
+      }
+
+      .main {
+        padding: 18px;
+      }
+
+      .input-row,
+      .manual-grid,
+      .result-card,
+      .feature-panel,
+      .summary-grid,
+      .kv-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" aria-label="Mission control sidebar">
+    <button class="collapse-btn" id="collapseBtn" title="Toggle sidebar">☰</button>
+    <div class="brand">
+      <div class="logo">SOC</div>
+      <div class="wordmark">AI-SOC</div>
+    </div>
+
+    <nav class="side-nav" aria-label="Sidebar navigation">
+      <button class="side-tab active" data-tab="manual"><span class="nav-icon">◉</span><span class="nav-label">Manual Alert Scan</span></button>
+      <button class="side-tab" data-tab="csv"><span class="nav-icon">▦</span><span class="nav-label">CSV Batch Analysis</span></button>
+      <button class="side-tab" data-tab="features"><span class="nav-icon">◆</span><span class="nav-label">Feature Importance</span></button>
+    </nav>
+
+    <p class="sidebar-section-title">Model inputs</p>
+    <div class="input-list">
+      <code>duration</code>
+      <code>src_bytes</code>
+      <code>dst_bytes</code>
+      <code>packet_count</code>
+      <code>error_count</code>
+    </div>
+
+    <div class="bottom-status"><span class="green-dot"></span><span>Model loaded</span></div>
+  </aside>
+
+  <header class="topbar">
+    <div class="system-title"><span class="logo">SOC</span><span>AI-SOC Alert Assistant</span></div>
+    <div class="status-cluster">
+      <span class="status-pill"><span class="radar-dot"></span>Model Active</span>
+      <span class="status-pill">Last scan: live session</span>
+      <span class="status-pill">Threat count: <strong id="threatCount">0</strong></span>
+    </div>
+  </header>
+
+  <nav class="tabbar" aria-label="Primary tabs">
+    <button class="top-tab active" data-tab="manual">Manual Alert Scan</button>
+    <button class="top-tab" data-tab="csv">CSV Batch Analysis</button>
+    <button class="top-tab" data-tab="features">Feature Importance</button>
+  </nav>
+
+  <main class="main">
+    <section class="tab-panel active" id="manual">
+      <div class="hero">
+        <p class="eyebrow">Deep space command center</p>
+        <h1>Instant clarity on a threat.</h1>
+        <p>Classify network alerts, score severity, map behavior to MITRE ATT&CK, and surface response guidance in one analyst-grade view.</p>
+      </div>
+
+      <h2 class="section-heading">Manual Alert Scan</h2>
+      <div class="grid manual-grid">
+        <div class="card">
+          <h3 class="card-title">Alert telemetry</h3>
+          <div class="input-row" id="manualInputs">
+            <label class="input-group">
+              <span class="input-label">duration <span class="unit-chip">ms</span></span>
+              <input id="duration" type="number" min="0" value="10" />
+            </label>
+            <label class="input-group">
+              <span class="input-label">src_bytes <span class="unit-chip">bytes</span></span>
+              <input id="src_bytes" type="number" min="0" value="9000" />
+            </label>
+            <label class="input-group">
+              <span class="input-label">dst_bytes <span class="unit-chip">bytes</span></span>
+              <input id="dst_bytes" type="number" min="0" value="100" />
+            </label>
+            <label class="input-group">
+              <span class="input-label">packet_count <span class="unit-chip">count</span></span>
+              <input id="packet_count" type="number" min="0" value="80" />
+            </label>
+            <label class="input-group">
+              <span class="input-label">error_count <span class="unit-chip">count</span></span>
+              <input id="error_count" type="number" min="0" value="10" />
+            </label>
+          </div>
+          <button class="cta" id="analyzeBtn">Analyze Alert</button>
+        </div>
+
+        <div class="card">
+          <div class="empty-state" id="emptyResult">
+            <div>
+              <p class="eyebrow">Awaiting scan</p>
+              <h3 class="card-title">Threat output appears here.</h3>
+              <p class="muted">Run an analysis to reveal risk score, MITRE tags, and response steps.</p>
+            </div>
+          </div>
+
+          <div class="result-card" id="resultCard">
+            <div class="gauge-wrap">
+              <div class="gauge" id="riskGauge">
+                <div class="gauge-inner">
+                  <div>
+                    <span class="gauge-number" id="riskNumber">0</span>
+                    <span class="gauge-caption" id="riskCaption">LOW RISK</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="assessment">
+              <div>
+                <h3 class="card-title">Threat assessment</h3>
+                <span class="badge" id="resultBadge">Normal traffic</span>
+              </div>
+
+              <div class="kv-grid">
+                <div class="kv">
+                  <div class="kv-label">Attack probability</div>
+                  <div class="kv-value mono" id="probabilityOut">0.00</div>
+                </div>
+                <div class="kv">
+                  <div class="kv-label">Risk level</div>
+                  <div class="kv-value" id="riskLevelOut">Low</div>
+                </div>
+                <div class="kv">
+                  <div class="kv-label">Primary tactic</div>
+                  <div class="kv-value" id="tacticOut">No clear tactic</div>
+                </div>
+              </div>
+
+              <div class="pill-row" id="mitrePills"></div>
+
+              <div class="kv">
+                <div class="kv-label">Detection rationale</div>
+                <div class="kv-value" id="reasonOut">-</div>
+              </div>
+
+              <div>
+                <h3 class="card-title">Response steps</h3>
+                <div class="response-list" id="responseSteps"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="csv">
+      <div class="hero">
+        <p class="eyebrow">Batch triage</p>
+        <h1>Analyze alert streams in seconds.</h1>
+        <p>Upload a CSV or load the demo dataset to generate severity, MITRE mapping, and response recommendations for every alert.</p>
+      </div>
+
+      <h2 class="section-heading">CSV Batch Analysis</h2>
+      <div class="card">
+        <div class="drop-zone" id="dropZone">
+          <strong>Drop CSV file here</strong>
+          <span class="muted">Required columns: duration, src_bytes, dst_bytes, packet_count, error_count</span>
+          <div>
+            <button class="ghost-btn" id="uploadBtn">Upload CSV</button>
+            <button class="ghost-btn" id="sampleBtn">Load sample dataset</button>
+          </div>
+          <input class="file-input" id="fileInput" type="file" accept=".csv,text/csv" />
+          <div class="progress-shell" id="progressShell"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+
+        <div id="batchOutput" style="display:none;">
+          <div class="summary-grid" id="summaryGrid"></div>
+          <div class="table-wrap">
+            <table class="table" id="resultsTable">
+              <thead>
+                <tr>
+                  <th data-sort="id">Alert ID</th>
+                  <th data-sort="risk">Risk Level</th>
+                  <th data-sort="mitre">MITRE Tag</th>
+                  <th data-sort="recommendation">Recommendation</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="features">
+      <div class="hero">
+        <p class="eyebrow">Explainable AI</p>
+        <h1>Know why the model decided.</h1>
+        <p>Feature importance gives analysts a lightweight explanation layer for model behavior before escalation.</p>
+      </div>
+
+      <h2 class="section-heading">Feature Importance</h2>
+      <div class="feature-panel">
+        <div class="card">
+          <h3 class="card-title">Ranked features</h3>
+          <table class="feature-table" id="featureTable">
+            <thead><tr><th>Feature</th><th>Importance</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="card chart-card">
+          <canvas id="importanceChart" height="280"></canvas>
+          <div class="fallback-bars" id="fallbackBars"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const features = [
+      { name: "packet_count", value: 0.23 },
+      { name: "duration", value: 0.22 },
+      { name: "error_count", value: 0.21 },
+      { name: "src_bytes", value: 0.19 },
+      { name: "dst_bytes", value: 0.15 }
+    ];
+
+    const sampleAlerts = [
+      { duration: 1, src_bytes: 200, dst_bytes: 1000, packet_count: 5, error_count: 0 },
+      { duration: 2, src_bytes: 300, dst_bytes: 1200, packet_count: 7, error_count: 0 },
+      { duration: 1, src_bytes: 150, dst_bytes: 900, packet_count: 4, error_count: 0 },
+      { duration: 3, src_bytes: 400, dst_bytes: 1500, packet_count: 9, error_count: 0 },
+      { duration: 2, src_bytes: 250, dst_bytes: 1100, packet_count: 6, error_count: 0 },
+      { duration: 1, src_bytes: 180, dst_bytes: 950, packet_count: 5, error_count: 0 },
+      { duration: 4, src_bytes: 500, dst_bytes: 1700, packet_count: 10, error_count: 0 },
+      { duration: 2, src_bytes: 220, dst_bytes: 1000, packet_count: 6, error_count: 0 },
+      { duration: 10, src_bytes: 9000, dst_bytes: 100, packet_count: 80, error_count: 10 },
+      { duration: 12, src_bytes: 12000, dst_bytes: 150, packet_count: 100, error_count: 15 },
+      { duration: 9, src_bytes: 8500, dst_bytes: 120, packet_count: 75, error_count: 8 },
+      { duration: 15, src_bytes: 15000, dst_bytes: 200, packet_count: 130, error_count: 20 }
+    ];
+
+    let activeTab = "manual";
+    let chart = null;
+    let tableRows = [];
+    let sortDirection = 1;
+
+    const tabButtons = [...document.querySelectorAll(".top-tab, .side-tab")];
+    const panels = [...document.querySelectorAll(".tab-panel")];
+
+    function setTab(tab) {
+      activeTab = tab;
+      tabButtons.forEach(button => button.classList.toggle("active", button.dataset.tab === tab));
+      panels.forEach(panel => panel.classList.toggle("active", panel.id === tab));
+      if (tab === "features") {
+        renderFeatureChart();
+      }
+    }
+
+    tabButtons.forEach(button => button.addEventListener("click", () => setTab(button.dataset.tab)));
+
+    document.getElementById("collapseBtn").addEventListener("click", () => {
+      document.body.classList.toggle("sidebar-collapsed");
+    });
+
+    function riskLevel(score) {
+      if (score >= 85) return "CRITICAL";
+      if (score >= 70) return "HIGH";
+      if (score >= 40) return "MEDIUM";
+      return "LOW";
+    }
+
+    function riskClass(level) {
+      return `risk-${level.toLowerCase()}`;
+    }
+
+    function riskColor(score) {
+      if (score >= 85) return "#E84545";
+      if (score >= 40) return "#E8A838";
+      return "#22C55E";
+    }
+
+    function analyze(alert) {
+      const attackSignals = [
+        alert.src_bytes >= 7000,
+        alert.packet_count >= 70,
+        alert.error_count >= 8,
+        alert.duration >= 8,
+        alert.dst_bytes <= 300
+      ].filter(Boolean).length;
+
+      const probability = Math.min(1, Math.max(0, attackSignals / 5 + (alert.error_count > 12 ? 0.12 : 0)));
+      const score = Math.round((0.55 * probability + 0.25 * 0.8 + 0.20 * 0.7) * 100);
+      const level = riskLevel(score);
+      const mitre = mapMitre(alert, level);
+      const recommendations = getRecommendations(level);
+
+      return {
+        ...alert,
+        probability,
+        score,
+        level,
+        mitre,
+        recommendations
+      };
+    }
+
+    function mapMitre(alert, level) {
+      if (level === "LOW" || level === "MEDIUM") {
+        return {
+          tactic: "No clear ATT&CK tactic",
+          technique: "Normal or low-risk activity",
+          tags: ["T1046"],
+          reason: "Risk is low or moderate and does not show a strong attack pattern."
+        };
+      }
+      if (alert.packet_count >= 70 && alert.src_bytes >= 7000 && alert.dst_bytes <= 300) {
+        return {
+          tactic: "Impact",
+          technique: "DoS / DDoS-like behavior",
+          tags: ["T1498", "T1499"],
+          reason: "High packet_count and src_bytes with low dst_bytes suggests service disruption behavior."
+        };
+      }
+      if (alert.error_count >= 10) {
+        return {
+          tactic: "Credential Access",
+          technique: "Brute Force-like behavior",
+          tags: ["T1110", "T1078"],
+          reason: "High error_count resembles repeated failed authentication attempts."
+        };
+      }
+      if (alert.duration >= 10 && alert.packet_count >= 50) {
+        return {
+          tactic: "Command and Control",
+          technique: "Suspicious persistent communication",
+          tags: ["T1071", "T1105"],
+          reason: "Long duration and high packet volume may indicate persistent communication."
+        };
+      }
+      return {
+        tactic: "Analyst Review",
+        technique: "Unclassified suspicious behavior",
+        tags: ["T1046", "T1190"],
+        reason: "The alert is high risk but needs analyst validation for a specific technique."
+      };
+    }
+
+    function getRecommendations(level) {
+      if (level === "CRITICAL") {
+        return [
+          "Open an incident ticket and attach alert evidence.",
+          "Review source/destination traffic and firewall logs.",
+          "Escalate to Tier 2 analyst immediately.",
+          "Temporarily restrict suspicious traffic if confirmed.",
+          "Preserve logs for investigation timeline."
+        ];
+      }
+      if (level === "HIGH") {
+        return [
+          "Escalate alert for additional review.",
+          "Check related logs from the last 24 hours.",
+          "Compare against similar alerts on nearby hosts.",
+          "Increase monitoring on affected assets."
+        ];
+      }
+      if (level === "MEDIUM") {
+        return [
+          "Keep the alert under monitoring.",
+          "Check whether the activity repeats.",
+          "Add asset to watchlist if needed."
+        ];
+      }
+      return [
+        "No immediate response required.",
+        "Close as low-risk if no related activity appears."
+      ];
+    }
+
+    function readManualAlert() {
+      return {
+        duration: Number(document.getElementById("duration").value),
+        src_bytes: Number(document.getElementById("src_bytes").value),
+        dst_bytes: Number(document.getElementById("dst_bytes").value),
+        packet_count: Number(document.getElementById("packet_count").value),
+        error_count: Number(document.getElementById("error_count").value)
+      };
+    }
+
+    function renderManualResult(result) {
+      document.getElementById("emptyResult").style.display = "none";
+      document.getElementById("resultCard").classList.add("visible");
+
+      const gauge = document.getElementById("riskGauge");
+      gauge.style.setProperty("--gauge-angle", `${result.score * 3.6}deg`);
+      gauge.style.setProperty("--gauge-color", riskColor(result.score));
+
+      document.getElementById("riskNumber").textContent = result.score;
+      document.getElementById("riskCaption").textContent = `${result.level} RISK`;
+      document.getElementById("probabilityOut").textContent = result.probability.toFixed(2);
+      document.getElementById("riskLevelOut").innerHTML = `<span class="badge ${riskClass(result.level)}">${result.level}</span>`;
+      document.getElementById("tacticOut").textContent = result.mitre.tactic;
+      document.getElementById("resultBadge").textContent = result.probability >= 0.5 ? "Possible attack detected" : "Normal traffic";
+      document.getElementById("resultBadge").className = `badge ${result.probability >= 0.5 ? "risk-critical" : "risk-low"}`;
+      document.getElementById("reasonOut").textContent = result.mitre.reason;
+
+      document.getElementById("mitrePills").innerHTML = [
+        `MITRE: ${result.mitre.tactic}`,
+        result.mitre.technique,
+        ...result.mitre.tags
+      ].map(tag => `<span class="mitre-pill">${tag}</span>`).join("");
+
+      document.getElementById("responseSteps").innerHTML = result.recommendations
+        .map(step => `<div class="response-step">${step}</div>`)
+        .join("");
+
+      document.getElementById("threatCount").textContent = result.probability >= 0.5 ? "1" : "0";
+    }
+
+    document.getElementById("analyzeBtn").addEventListener("click", () => {
+      renderManualResult(analyze(readManualAlert()));
+    });
+
+    function parseCsv(text) {
+      const lines = text.trim().split(/\r?\n/).filter(Boolean);
+      const headers = lines.shift().split(",").map(header => header.trim());
+      return lines.map(line => {
+        const values = line.split(",").map(value => value.trim());
+        return headers.reduce((row, header, index) => {
+          row[header] = Number(values[index]);
+          return row;
+        }, {});
+      }).filter(row => FEATURES.every(feature => Number.isFinite(row[feature])));
+    }
+
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const progressShell = document.getElementById("progressShell");
+    const progressFill = document.getElementById("progressFill");
+
+    document.getElementById("uploadBtn").addEventListener("click", () => fileInput.click());
+    document.getElementById("sampleBtn").addEventListener("click", () => runBatch(sampleAlerts));
+
+    fileInput.addEventListener("change", event => {
+      const [file] = event.target.files;
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => runBatch(parseCsv(reader.result));
+      reader.readAsText(file);
+    });
+
+    ["dragenter", "dragover"].forEach(eventName => {
+      dropZone.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropZone.classList.add("drag-over");
+      });
+    });
+
+    ["dragleave", "drop"].forEach(eventName => {
+      dropZone.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropZone.classList.remove("drag-over");
+      });
+    });
+
+    dropZone.addEventListener("drop", event => {
+      const [file] = event.dataTransfer.files;
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => runBatch(parseCsv(reader.result));
+      reader.readAsText(file);
+    });
+
+    function runBatch(alerts) {
+      progressShell.style.display = "block";
+      progressFill.style.width = "0";
+      let progress = 0;
+      const timer = setInterval(() => {
+        progress += 25;
+        progressFill.style.width = `${progress}%`;
+        if (progress >= 100) {
+          clearInterval(timer);
+          const results = alerts.map((alert, index) => ({ id: `AL-${String(index + 1).padStart(3, "0")}`, ...analyze(alert) }));
+          tableRows = results;
+          renderSummary(results);
+          renderTable(results);
+          document.getElementById("batchOutput").style.display = "block";
+          document.getElementById("threatCount").textContent = results.filter(row => row.probability >= 0.5).length;
+        }
+      }, 110);
+    }
+
+    function renderSummary(results) {
+      const counts = {
+        LOW: 0,
+        MEDIUM: 0,
+        HIGH: 0,
+        CRITICAL: 0
+      };
+      results.forEach(row => counts[row.level]++);
+      document.getElementById("summaryGrid").innerHTML = Object.entries(counts).map(([level, count]) => `
+        <div class="metric">
+          <span>${level}</span>
+          <strong>${count}</strong>
+        </div>
+      `).join("");
+    }
+
+    function renderTable(rows) {
+      const tbody = document.querySelector("#resultsTable tbody");
+      tbody.innerHTML = rows.map(row => {
+        const primaryRecommendation = row.recommendations[0];
+        return `
+          <tr>
+            <td>${row.id}</td>
+            <td><span class="badge ${riskClass(row.level)}">${row.level}</span></td>
+            <td><span class="mitre-pill">${row.mitre.tags[0]}</span></td>
+            <td>${primaryRecommendation}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    document.querySelectorAll("#resultsTable th").forEach(header => {
+      header.addEventListener("click", () => {
+        const key = header.dataset.sort;
+        sortDirection *= -1;
+        const sorted = [...tableRows].sort((a, b) => {
+          const av = key === "risk" ? a.score : key === "mitre" ? a.mitre.tags[0] : key === "recommendation" ? a.recommendations[0] : a.id;
+          const bv = key === "risk" ? b.score : key === "mitre" ? b.mitre.tags[0] : key === "recommendation" ? b.recommendations[0] : b.id;
+          return av > bv ? sortDirection : -sortDirection;
+        });
+        renderTable(sorted);
+      });
+    });
+
+    function renderFeatureTable() {
+      document.querySelector("#featureTable tbody").innerHTML = features.map((feature, index) => `
+        <tr>
+          <td>${index === 0 ? '<span class="diamond">◆</span>' : ""}${feature.name}</td>
+          <td class="mono">${feature.value.toFixed(2)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderFallbackBars() {
+      const max = Math.max(...features.map(feature => feature.value));
+      const fallback = document.getElementById("fallbackBars");
+      fallback.innerHTML = features.map((feature, index) => `
+        <div class="fallback-row">
+          <div>${index === 0 ? '<span class="diamond">◆</span>' : ""}${feature.name}</div>
+          <div class="track"><div class="fill" style="--w:${(feature.value / max) * 100}%; animation-delay:${index * 80}ms"></div></div>
+          <div>${feature.value.toFixed(2)}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderFeatureChart() {
+      renderFeatureTable();
+      renderFallbackBars();
+      if (!window.Chart) {
+        document.getElementById("importanceChart").style.display = "none";
+        document.getElementById("fallbackBars").style.display = "flex";
+        return;
+      }
+      const context = document.getElementById("importanceChart");
+      context.style.display = "block";
+      document.getElementById("fallbackBars").style.display = "none";
+      if (chart) chart.destroy();
+      chart = new Chart(context, {
+        type: "bar",
+        data: {
+          labels: features.map((feature, index) => index === 0 ? `◆ ${feature.name}` : feature.name),
+          datasets: [{
+            data: features.map(feature => feature.value),
+            backgroundColor: "#3D9EFF",
+            borderRadius: 6,
+            barPercentage: 0.62
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          animation: {
+            duration: 900,
+            delay: context => context.dataIndex * 80
+          },
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "#162133",
+              titleColor: "#E8EDF5",
+              bodyColor: "#E8EDF5",
+              borderColor: "#1E2D42",
+              borderWidth: 1
+            }
+          },
+          scales: {
+            x: {
+              max: 0.25,
+              grid: { color: "rgba(30, 45, 66, 0.8)" },
+              ticks: { color: "#5C7090", font: { family: "JetBrains Mono" } }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: "#E8EDF5", font: { family: "JetBrains Mono" } }
+            }
+          }
+        }
+      });
+    }
+
+    window.renderFeatureChart = renderFeatureChart;
+    renderFeatureTable();
+    renderFallbackBars();
+  </script>
+</body>
+</html>

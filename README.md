@@ -65,6 +65,20 @@ http://localhost:8501
 
 It supports manual alert checking and CSV upload for batch alert analysis.
 
+## Run The Single-File HTML Dashboard
+
+```bash
+python -m http.server 8088 --directory app
+```
+
+Then open:
+
+```text
+http://localhost:8088/dashboard.html
+```
+
+This standalone dashboard is built with vanilla JavaScript and Chart.js.
+
 ## Create Evaluation Reports
 
 ```bash
