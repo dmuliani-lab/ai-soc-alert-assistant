@@ -79,6 +79,10 @@ http://localhost:8088/dashboard.html
 
 This standalone dashboard is built with vanilla JavaScript and Chart.js.
 
+## Repository Verification
+
+The completed project is available on the `main` branch and includes the Streamlit dashboard, the standalone HTML dashboard, source modules, trained model artifact, evaluation reports, and dashboard screenshots.
+
 ## Create Evaluation Reports
 
 ```bash
