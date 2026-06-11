@@ -1,0 +1,6 @@
+Feature,Importance
+packet_count,0.23
+duration,0.22
+error_count,0.21
+src_bytes,0.19
+dst_bytes,0.15
