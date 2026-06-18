@@ -92,6 +92,20 @@ ai-soc-alert-assistant/
 
 Run the commands from the repository root.
 
+### Quick Start (PowerShell)
+
+Copy these commands exactly:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python src\train_model.py
+python src\evaluate_model.py
+python src\feature_importance.py
+streamlit run app\dashboard.py
+```
+
 ### PowerShell
 
 ```powershell
@@ -226,7 +240,14 @@ Detailed Georgian documentation is available in `docs/`, including the
 technical document, installation guide, user manual, demo script, Git
 submission instructions, diagrams explanation, and final checklist.
 
+## Final Submission Materials
+
+- [Final presentation draft](presentation/AI_SOC_Final_Presentation_DRAFT.pptx)
+- [Technical documentation](docs/technical_documentation.md)
+- [Dashboard screenshot guide](screenshots/README.md)
+- [System architecture diagram](diagrams/system_architecture.mmd)
+- [Use case diagram](diagrams/use_case_diagram.mmd)
+
 ## GitHub Repository
 
-GitHub Repository:
-[PASTE_GITHUB_LINK_HERE]
+https://github.com/dmuliani-lab/ai-soc-alert-assistant

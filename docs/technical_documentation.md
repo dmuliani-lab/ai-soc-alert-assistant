@@ -264,4 +264,4 @@ streamlit run app\dashboard.py
 ## 18. GitHub Repository Link
 
 GitHub Repository:
-[PASTE_GITHUB_LINK_HERE]
+https://github.com/dmuliani-lab/ai-soc-alert-assistant

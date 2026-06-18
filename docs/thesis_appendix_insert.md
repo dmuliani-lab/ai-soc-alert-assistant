@@ -44,7 +44,7 @@ ATT&CK Mapping, View Feature Importance და View Evaluation Reports.
 ## დანართი G. ჩასაბარებელი ბმულები და მასალები
 
 GitHub Repository:
-[PASTE_GITHUB_LINK_HERE]
+https://github.com/dmuliani-lab/ai-soc-alert-assistant
 
 პროექტის ლოკალურად გაშვების ბრძანება:
 
