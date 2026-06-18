@@ -6,19 +6,13 @@ import pandas as pd
 from risk_score import calculate_risk_score, get_risk_level
 
 
-FEATURE_COLUMNS = [
-    "duration",
-    "src_bytes",
-    "dst_bytes",
-    "packet_count",
-    "error_count",
-]
-
 MODEL_PATH = Path("models/ai_soc_model.pkl")
+FEATURES_PATH = Path("models/features.pkl")
 
 
 def main():
     model = joblib.load(MODEL_PATH)
+    feature_names = joblib.load(FEATURES_PATH)
 
     new_alert = {
         "duration": 13,
@@ -28,7 +22,8 @@ def main():
         "error_count": 17,
     }
 
-    alert_df = pd.DataFrame([new_alert], columns=FEATURE_COLUMNS)
+    alert_df = pd.DataFrame([new_alert])
+    alert_df = alert_df.reindex(columns=feature_names, fill_value=0)
 
     prediction = model.predict(alert_df)[0]
     probability = model.predict_proba(alert_df)[0]
@@ -37,11 +32,7 @@ def main():
     risk_score = calculate_risk_score(attack_probability)
     risk_level = get_risk_level(risk_score)
 
-    if prediction == 1:
-        print("Result: Possible attack")
-    else:
-        print("Result: Normal traffic")
-
+    print("Result:", "Possible attack" if prediction == 1 else "Normal traffic")
     print("Attack probability:", round(attack_probability, 2))
     print("Risk score:", risk_score)
     print("Risk level:", risk_level)

@@ -1,0 +1,26 @@
+flowchart LR
+    A["SOC Analyst"]
+
+    subgraph S["AI-SOC Alert Assistant"]
+        U1(["Manual Alert Check"])
+        U2(["Upload CSV"])
+        U3(["View Prediction"])
+        U4(["View Risk Score"])
+        U5(["View MITRE ATT&CK Mapping"])
+        U6(["View Feature Importance"])
+        U7(["View Evaluation Reports"])
+    end
+
+    A --> U1
+    A --> U2
+    A --> U3
+    A --> U4
+    A --> U5
+    A --> U6
+    A --> U7
+
+    U1 -. "includes" .-> U3
+    U1 -. "includes" .-> U4
+    U1 -. "includes" .-> U5
+    U2 -. "includes" .-> U3
+    U2 -. "includes" .-> U4

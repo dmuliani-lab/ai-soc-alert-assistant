@@ -1,0 +1,14 @@
+flowchart LR
+    A["CSV Data / Manual Input"] --> B["Data Loader / Preprocessing"]
+    B --> C["ML Model"]
+    C --> D["Attack Probability"]
+    D --> E["Risk Score Module"]
+    E --> F["MITRE ATT&CK Mapping"]
+    F --> G["Feature Importance"]
+    G --> H["Streamlit Dashboard"]
+    H --> I["SOC Analyst"]
+
+    C -. "BENIGN / ATTACK" .-> H
+    E -. "Low / Medium / High / Critical" .-> H
+    F -. "Tactic, technique, reason" .-> H
+    G -. "Global model explanation" .-> H

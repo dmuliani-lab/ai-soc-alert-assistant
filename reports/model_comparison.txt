@@ -1,0 +1,8 @@
+AI-SOC Alert Assistant - Model Comparison
+====================================================
+
+              model  accuracy  precision  recall  f1_score  true_negative  false_positive  false_negative  true_positive
+Logistic Regression       1.0        1.0     1.0       1.0              2               0               0              2
+      Decision Tree       1.0        1.0     1.0       1.0              2               0               0              2
+      Random Forest       1.0        1.0     1.0       1.0              2               0               0              2
+  Gradient Boosting       1.0        1.0     1.0       1.0              2               0               0              2

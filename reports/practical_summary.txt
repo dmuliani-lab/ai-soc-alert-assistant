@@ -1,0 +1,18 @@
+Practical Summary - AI-SOC Alert Assistant
+=========================================
+
+The practical part of the project implements a working AI-SOC Alert Assistant prototype for security alert triage. The system uses a supervised machine learning classifier to separate simple network alert records into BENIGN and ATTACK categories. The current main model is a Random Forest classifier trained on a small synthetic dataset.
+
+The prototype includes a reusable data loading module that prepares numeric features, converts labels into binary classes, and handles missing or infinite values. This makes the project easier to extend toward larger datasets such as CIC-IDS2017 or UNSW-NB15.
+
+The system calculates an additional risk score for each alert. The risk score combines attack probability, severity, and asset criticality. This creates a more SOC-oriented output than a simple model prediction because analysts usually need prioritization, not only classification.
+
+The project also includes explainability through Random Forest feature importance. Feature importance shows which input fields had the strongest global influence on the model. This helps analysts understand model behavior and supports the research part of the thesis. Future work can improve this with SHAP or LIME for local per-alert explanations.
+
+A simple educational MITRE ATT&CK mapping module maps alert patterns to possible tactics and techniques, such as Impact, Credential Access, and Command and Control. This mapping is rule-based and should be understood as a prototype demonstration, not a full threat intelligence system.
+
+The experimental part was strengthened with model evaluation, model comparison, and cross-validation. The evaluation report includes accuracy, precision, recall, F1-score, a confusion matrix, and a classification report. The model comparison script compares Logistic Regression, Decision Tree, Random Forest, and Gradient Boosting. The cross-validation script uses Stratified K-Fold with a dynamic number of folds suitable for the small dataset.
+
+The Streamlit dashboard brings the practical modules together. It supports manual alert analysis, CSV batch analysis, feature importance visualization, MITRE mapping, incident response recommendations, and research result display.
+
+The main limitation is that the current dataset is small and simplified. High accuracy may be caused by the artificial nature of the sample data. Therefore, the prototype demonstrates the concept and workflow, but it does not prove production-level SOC performance. For stronger scientific conclusions, future evaluation should use larger and more realistic datasets such as CIC-IDS2017 or UNSW-NB15.

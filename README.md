@@ -1,149 +1,232 @@
-# AI SOC Alert Assistant
+# AI-SOC Alert Assistant
 
-Small starter project for classifying simple network alert records as normal traffic or a possible attack.
+AI-SOC Alert Assistant is a bachelor thesis prototype that demonstrates how
+machine learning can support Security Operations Center (SOC) analysts. The
+system classifies simplified network alerts, estimates attack probability,
+calculates a risk score, assigns a risk level, shows global feature importance,
+and maps suspicious behavior to educational MITRE ATT&CK tactics.
+
+The project is designed as a beginner-friendly academic prototype. It supports
+analyst triage and explanation, but it is not a production SIEM, threat
+intelligence platform, or autonomous incident-response system.
+
+## Main Features
+
+- Manual alert check
+- CSV alert upload and batch analysis
+- Attack probability prediction
+- Risk Score calculation
+- Risk Level classification: Low, Medium, High, or Critical
+- Feature Importance / Explainable AI
+- MITRE ATT&CK Mapping
+- Model Evaluation
+- Model Comparison
+- Stratified K-Fold Cross-validation
+- Streamlit Dashboard
+- Initial incident-response recommendations
+
+## Technologies
+
+- Python
+- Pandas
+- NumPy
+- Scikit-learn
+- Matplotlib
+- Joblib
+- Streamlit
+- Altair
 
 ## Project Structure
 
 ```text
 ai-soc-alert-assistant/
+├── app/
+│   ├── dashboard.py                 # Interactive Streamlit dashboard
+│   └── dashboard.html               # Standalone dashboard prototype
 ├── data/
-│   └── sample_alerts.csv
-├── src/
-│   ├── train_model.py
-│   ├── predict_alert.py
-│   └── risk_score.py
+│   └── sample_alerts.csv            # Small demonstration dataset
+├── diagrams/
+│   ├── system_architecture.mmd       # Mermaid architecture diagram
+│   └── use_case_diagram.mmd          # Mermaid analyst use cases
+├── docs/
+│   ├── technical_documentation.md    # Detailed technical documentation
+│   ├── installation_guide.md         # Installation and troubleshooting
+│   ├── user_manual.md                # Dashboard user manual
+│   └── ...                           # Demo, Git, appendix, and checklist files
 ├── models/
+│   ├── ai_soc_model.pkl              # Trained Random Forest model
+│   └── features.pkl                  # Saved model feature order
+├── presentation/
+│   ├── slide_content.md              # Georgian 12-slide presentation draft
+│   └── AI_SOC_Final_Presentation_DRAFT.pptx
 ├── reports/
-└── app/
+│   ├── metrics.txt
+│   ├── confusion_matrix.png
+│   ├── feature_importance.csv
+│   ├── feature_importance.png
+│   ├── model_comparison.csv
+│   ├── model_comparison.txt
+│   ├── cross_validation_results.csv
+│   ├── cross_validation_results.txt
+│   ├── explainability_report.txt
+│   └── practical_summary.txt
+├── screenshots/
+│   └── README.md                     # Required screenshot capture guide
+├── src/
+│   ├── data_loader.py                # CSV loading and preprocessing
+│   ├── train_model.py                # Random Forest training
+│   ├── predict_alert.py              # Single-alert command-line example
+│   ├── evaluate_model.py             # Metrics and confusion matrix
+│   ├── model_comparison.py            # Baseline/model comparison
+│   ├── cross_validation.py            # Stratified cross-validation
+│   ├── feature_importance.py          # Global explainability artifacts
+│   ├── risk_score.py                  # Risk Score and level rules
+│   ├── mitre_mapping.py               # Educational MITRE mapping rules
+│   └── incident_response.py           # Response recommendations
+├── .gitignore
+├── requirements.txt
+└── README.md
 ```
 
-## Setup
+## Installation
 
-```bash
+Run the commands from the repository root.
+
+### PowerShell
+
+```powershell
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-If `python` does not work on Windows, try:
+### Command Prompt
 
-```bash
-py -m venv .venv
-.venv\Scripts\activate
+```cmd
+python -m venv .venv
+.venv\Scripts\activate.bat
 pip install -r requirements.txt
 ```
 
-This workspace already has a working `.venv` created with Python 3.12.
+## Train the Model
 
-## Train The Model
-
-```bash
-python src/train_model.py
+```powershell
+python src\train_model.py
 ```
 
-This reads `data/sample_alerts.csv`, trains a Random Forest classifier, prints accuracy and a classification report, then saves the model to `models/ai_soc_model.pkl`.
+The script trains the main Random Forest classifier and saves:
 
-## Predict One Alert
-
-```bash
-python src/predict_alert.py
+```text
+models/ai_soc_model.pkl
+models/features.pkl
 ```
 
-This loads the saved model, predicts whether one example alert is normal or an attack, and prints attack probability, risk score, and risk level.
+## Evaluate the Model
 
-## Run The Dashboard
+```powershell
+python src\evaluate_model.py
+```
 
-```bash
+## Run Model Comparison
+
+```powershell
+python src\model_comparison.py
+```
+
+This compares Logistic Regression, Decision Tree, Random Forest, and Gradient
+Boosting on the same train/test split.
+
+## Run Cross-validation
+
+```powershell
+python src\cross_validation.py
+```
+
+The script uses Stratified K-Fold and selects a valid number of folds based on
+the smallest class in the demonstration dataset.
+
+## Generate Feature Importance
+
+```powershell
+python src\feature_importance.py
+```
+
+## Run the Dashboard
+
+```powershell
 streamlit run app\dashboard.py
 ```
 
-The dashboard opens at:
+Expected local URL:
 
 ```text
 http://localhost:8501
 ```
 
-It supports manual alert checking and CSV upload for batch alert analysis.
+## Generated Reports
 
-## Run The Single-File HTML Dashboard
+- `reports/metrics.txt`
+- `reports/confusion_matrix.png`
+- `reports/feature_importance.csv`
+- `reports/feature_importance.png`
+- `reports/model_comparison.csv`
+- `reports/model_comparison.txt`
+- `reports/cross_validation_results.csv`
+- `reports/cross_validation_results.txt`
+- `reports/explainability_report.txt`
+- `reports/practical_summary.txt`
 
-```bash
-python -m http.server 8088 --directory app
-```
+The repository may also contain dashboard screenshots generated during local
+testing. They should not be confused with the final screenshots that must be
+captured for the thesis appendix and presentation.
 
-Then open:
+## Risk Score
 
-```text
-http://localhost:8088/dashboard.html
-```
-
-This standalone dashboard is built with vanilla JavaScript and Chart.js.
-
-## Repository Verification
-
-The completed project is available on the `main` branch and includes the Streamlit dashboard, the standalone HTML dashboard, source modules, trained model artifact, evaluation reports, and dashboard screenshots.
-
-## Create Evaluation Reports
-
-```bash
-python src\evaluate_model.py
-```
-
-This creates:
+The prototype combines model output and simple SOC context:
 
 ```text
-reports/metrics.txt
-reports/confusion_matrix.png
+Risk Score = (
+    0.55 × Attack Probability
+  + 0.25 × Severity
+  + 0.20 × Asset Criticality
+) × 100
 ```
 
-Use these files in the written project to show accuracy, precision, recall, F1-score, and the confusion matrix.
+Default demonstration values are used for severity and asset criticality.
+Production weights would require validation with historical incidents,
+business impact, asset context, and analyst feedback.
 
-## Create Feature Importance Reports
+## Limitations
 
-```bash
-python src\feature_importance.py
-```
+- The current dataset is small, simplified, and intended for demonstration.
+- High accuracy can result from the small artificial dataset and is not proof
+  of production-level SOC performance.
+- The current global Feature Importance output does not explain one individual
+  prediction.
+- MITRE ATT&CK Mapping uses simple educational rules, not a complete threat
+  intelligence or detection engineering system.
+- Risk Score weights are manually selected and have not been calibrated with
+  real organizational incident data.
+- Stronger scientific evaluation should use larger datasets such as
+  CIC-IDS2017 or UNSW-NB15.
 
-This creates:
+## Future Work
 
-```text
-reports/feature_importance.csv
-reports/feature_importance.png
-```
+- Evaluate and retrain with a larger, realistic dataset
+- Add SHAP/LIME local explanations
+- Add FastAPI integration
+- Integrate with a real SIEM or alert pipeline
+- Add an analyst feedback loop
+- Improve MITRE ATT&CK mapping and technique coverage
+- Add model versioning, drift monitoring, and experiment tracking
 
-Feature Importance helps explain which alert fields had the strongest influence on the Random Forest model.
+## Documentation
 
-## MITRE ATT&CK Mapping
+Detailed Georgian documentation is available in `docs/`, including the
+technical document, installation guide, user manual, demo script, Git
+submission instructions, diagrams explanation, and final checklist.
 
-პროექტში დამატებულია MITRE ATT&CK Mapping-ის სასწავლო მოდული. იგი მაღალი რისკის ალერტებს უკავშირებს შესაძლო თავდასხმის ტაქტიკებსა და ტექნიკებს.
+## GitHub Repository
 
-მაგალითები:
-- მაღალი `packet_count` და `src_bytes` -> Impact / DoS-like behavior
-- მაღალი `error_count` -> Credential Access / Brute Force-like behavior
-- მაღალი `duration` და `packet_count` -> Command and Control-like suspicious communication
-
-ეს mapping გამოიყენება როგორც პროტოტიპის ნაწილი და რეალურ SOC გარემოში საჭიროებს უფრო ღრმა threat intelligence წყაროებთან ინტეგრაციას.
-
-## Incident Response Recommendations
-
-პროექტში დამატებულია რეკომენდაციების მოდული, რომელიც `risk_level`-ისა და MITRE tactic-ის მიხედვით ანალიტიკოსს აძლევს საწყის რეაგირების ნაბიჯებს.
-
-ეს რეკომენდაციები არ ცვლის ანალიტიკოსის გადაწყვეტილებას, არამედ ეხმარება მას სწრაფ triage პროცესში.
-
-## Project Status
-
-Implemented:
-- Machine Learning classification
-- Model evaluation report
-- Confusion Matrix
-- Risk Score
-- Risk Level
-- Feature Importance
-- MITRE ATT&CK Mapping
-- Incident Response Recommendations
-- Streamlit Dashboard
-
-Limitations:
-- The current prototype uses a small synthetic dataset.
-- Accuracy is high because the dataset is simple.
-- For real SOC usage, larger datasets such as CIC-IDS2017 or UNSW-NB15 are required.
+GitHub Repository:
+[PASTE_GITHUB_LINK_HERE]

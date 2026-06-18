@@ -1,9 +1,10 @@
-def map_alert_to_mitre(alert_data, risk_level):
+def map_alert_to_mitre(alert_data, risk_level=None):
     """
     Map a network alert to a simple MITRE ATT&CK-style category.
 
-    This is a rule-based educational prototype. A real SOC system would use
-    richer telemetry, threat intelligence, and validated detection logic.
+    This is a prototype educational mapping for a bachelor thesis project.
+    It is not a full threat intelligence system and should not be used as a
+    production-grade SOC detection rule set.
     """
 
     duration = float(alert_data.get("duration", 0))
@@ -12,36 +13,41 @@ def map_alert_to_mitre(alert_data, risk_level):
     packet_count = float(alert_data.get("packet_count", 0))
     error_count = float(alert_data.get("error_count", 0))
 
-    if risk_level in ["Low", "Medium"]:
-        return {
-            "tactic": "No clear ATT&CK tactic",
-            "technique": "Normal or low-risk activity",
-            "reason": "ალერტის რისკი დაბალია ან საშუალო დონისაა და არ იკვეთება მკაფიო შეტევის პატერნი.",
-        }
-
     if packet_count >= 70 and src_bytes >= 7000 and dst_bytes <= 300:
         return {
             "tactic": "Impact",
-            "technique": "DoS / DDoS-like behavior",
-            "reason": "packet_count და src_bytes მაღალია, ხოლო dst_bytes დაბალია. ეს შეიძლება მიუთითებდეს სერვისის გადატვირთვის მცდელობაზე.",
+            "technique": "DoS or DDoS-like behavior",
+            "reason": (
+                "High packet_count and high src_bytes with low dst_bytes may "
+                "indicate service flooding or resource exhaustion behavior."
+            ),
         }
 
     if error_count >= 10:
         return {
             "tactic": "Credential Access",
             "technique": "Brute Force-like behavior",
-            "reason": "error_count მაღალია, რაც შეიძლება მიუთითებდეს ავტორიზაციის მრავალი წარუმატებელი მცდელობის მსგავს ქცევაზე.",
+            "reason": (
+                "High error_count may indicate repeated failed access attempts "
+                "similar to brute force activity."
+            ),
         }
 
     if duration >= 10 and packet_count >= 50:
         return {
             "tactic": "Command and Control",
             "technique": "Suspicious persistent communication",
-            "reason": "კავშირის ხანგრძლივობა და packet_count მაღალია, რაც შეიძლება საეჭვო მუდმივ კომუნიკაციაზე მიუთითებდეს.",
+            "reason": (
+                "High duration combined with high packet_count may indicate "
+                "longer suspicious communication that needs analyst review."
+            ),
         }
 
     return {
         "tactic": "Unknown / Needs Analyst Review",
         "technique": "Unclassified suspicious behavior",
-        "reason": "სისტემამ დააფიქსირა მაღალი რისკი, თუმცა კონკრეტული შეტევის ტიპი დამატებით ანალიტიკოსის შემოწმებას საჭიროებს.",
+        "reason": (
+            "The alert does not match the simple educational mapping rules. "
+            "A SOC analyst should review the event context."
+        ),
     }

@@ -1,0 +1,16 @@
+AI-SOC Alert Assistant - Explainability Report
+================================================
+
+Most important feature: packet_count
+Importance value: 0.2300
+
+Feature importance helps SOC analysts understand which input fields had the
+strongest global influence on the Random Forest model. This makes the prototype
+more transparent than a black-box prediction-only system.
+
+Important limitation:
+This is a global explanation. It describes the model's overall behavior across
+the dataset, not the exact reason for one individual alert prediction.
+
+Future work:
+For local, per-alert explanations, future versions can use SHAP or LIME.
